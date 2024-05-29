@@ -1,0 +1,43 @@
+---
+version: 1
+
+setup:
+  # Executes a file
+  - type: execute
+    path: "{game_dir}/dependency.exe"
+  # Create a file with content
+  - type: file
+    path: "{user_dir}/Documents/Game/settings.ini"
+    content: |
+      [game]
+      enable_splash_screen=0
+      [user]
+      name={user_name}
+  # Create a registry entry
+  - type: registry
+    subtype: dword
+    path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
+    key: "Installed"
+    content: 1
+  # Execute a file
+  - type: execute
+    path: "{game_dir}/language.exe"
+
+game:
+  # The path to the game executable
+  path: "{game_dir}/game.exe"
+  # The arguments to pass to the game
+  arguments: "--user-name={user_name}"
+  # The executables to add to the firewall
+  firewall:
+    - "{game_dir}/game.exe"
+    - "{game_dir}/data/binaries/Win64/game-win64.exe"
+
+server:
+  # The path to the game executable
+  path: "{game_dir}/game-server.exe"
+  # The arguments to pass to the game
+  arguments: "--server-config=config.xml --lan-server={user_name}_server --network-console"
+  # The executables to add to the firewall
+  firewall:
+    - "{game_dir}/game-server.exe"
