@@ -64,7 +64,7 @@ setup:
       name={user_name}
   - type: registry
     subtype: dword
-    path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\Game"
+    path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
     key: "Installed"
     content: 1
   - type: execute
@@ -142,7 +142,7 @@ Creates a registry key.
 setup:
   - type: registry
     subtype: DWORD
-    path: "HKEY_CURRENT_USER\SOFTWARE\Game Company\Game"
+    path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
     key: "Installed"
     content: 1
 ```
