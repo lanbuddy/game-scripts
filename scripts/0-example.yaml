@@ -37,7 +37,10 @@ server:
   # The path to the game executable
   path: "{game_dir}/game-server.exe"
   # The arguments to pass to the game
-  arguments: "--server-config=config.xml --lan-server={user_name}_server --network-console"
+  arguments: >
+    --server-config=config.xml
+    --lan-server={user_name}_server
+    --network-console
   # The executables to add to the firewall
   firewall:
     - "{game_dir}/game-server.exe"
