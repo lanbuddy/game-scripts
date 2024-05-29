@@ -33,7 +33,7 @@ If you would like to add some scripts for a game to this repository you are more
 
 - A meaningful title stating what you added/changed and the game you changed something for with its igdb id for example:
   - `Add SuperTux (51231)`
-  - `Added dedicated server script to SuperTuxCart (10763) as it was missing`
+  - `Add server to SuperTuxCart (10763) as it is missing`
 - Good quality scripts with no spelling mistakes and written in english.
 - No hazardous behaviour of the scripts.
 
