@@ -2,45 +2,48 @@
 version: 1
 
 setup:
-  # Executes a file
-  - type: execute
-    path: "{game_dir}/dependency.exe"
-  # Create a file with content
-  - type: file
-    path: "{user_dir}/Documents/Game/settings.ini"
-    content: |
-      [game]
-      enable_splash_screen=0
-      [user]
-      name={user_name}
-  # Create a registry entry
-  - type: registry
-    subtype: dword
-    path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
-    key: "Installed"
-    content: 1
-  # Execute a file
-  - type: execute
-    path: "{game_dir}/language.exe"
+  windows:
+    - type: execute
+      command: "{{gameDir}}/dependency.exe"
+      arguments: "-q"
+      workingDirectory: "{{gameDir}}"
+      runAsAdmin: true
+      allowedExitCodes:
+        - 0
+    - type: file
+      path: "{{userDir}}/Documents/Game/settings.ini"
+      content: |
+        [game]
+        enable_splash_screen=0
+        [user]
+        name={{userName}}
+    - type: registry
+      path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
+      key: "Installed"
+      keyType: 'DWORD'
+      value: 1
+    - type: fileTemplate
+      templateFile: "{{gameDir}}/server_settings.ini.template"
+      path: "{{gameDir}}/server_settings.ini"
 
 game:
-  # The path to the game executable
-  path: "{game_dir}/game.exe"
-  # The arguments to pass to the game
-  arguments: "--user-name={user_name}"
-  # The executables to add to the firewall
-  firewall:
-    - "{game_dir}/game.exe"
-    - "{game_dir}/data/binaries/Win64/game-win64.exe"
+  windows:
+    command: "{{gameDir}}/game.exe"
+    workingDirectory: "{{gameDir}}"
+    arguments: "--user-name={{userName}}"
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/game.exe"
+        name: "allow_incoming_for_gamename"
 
 server:
-  # The path to the game executable
-  path: "{game_dir}/game-server.exe"
-  # The arguments to pass to the game
-  arguments: >
-    --server-config=config.xml
-    --lan-server={user_name}_server
-    --network-console
-  # The executables to add to the firewall
-  firewall:
-    - "{game_dir}/game-server.exe"
+  windows:
+    command: "{{gameDir}}/server.exe"
+    workingDirectory: "{{gameDir}}"
+    arguments: "--dedicated --max-users=10"
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/game.exe"
+        name: "allow_incoming_for_gamename"

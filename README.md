@@ -15,8 +15,8 @@ This repository contains game start and server start scripts for games that can 
       - [The `file` type](#the-file-type)
       - [The `execute` type](#the-execute-type)
       - [The `registry` type](#the-registry-type)
-    - [Game Section](#game-section)
-    - [Server Section](#server-section)
+      - [The `fileTemplate` type](#the-filetemplate-type)
+    - [Game and Server Section](#game-and-server-section)
     - [Available Variables](#available-variables)
   - [License](#license)
 
@@ -53,35 +53,51 @@ The game scripts are pretty easy to create and use. Their syntax looks like this
 version: 1
 
 setup:
-  - type: execute
-    path: "{game_dir}/dependency.exe"
-  - type: file
-    path: "{user_dir}/Documents/Game/settings.ini"
-    content: |
-      [game]
-      enable_splash_screen=0
-      [user]
-      name={user_name}
-  - type: registry
-    subtype: dword
-    path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
-    key: "Installed"
-    content: 1
-  - type: execute
-    path: "{game_dir}/language.exe"
+  windows:
+    - type: execute
+      command: "{{gameDir}}/dependency.exe"
+      arguments: "-q"
+      workingDirectory: "{{gameDir}}"
+      runAsAdmin: true
+      allowedExitCodes:
+        - 0
+    - type: file
+      path: "{{userDir}}/Documents/Game/settings.ini"
+      content: |
+        [game]
+        enable_splash_screen=0
+        [user]
+        name={{userName}}
+    - type: registry
+      path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
+      key: "Installed"
+      keyType: 'DWORD'
+      value: 1
+    - type: fileTemplate
+      templateFile: "{{gameDir}}/server_settings.ini.template"
+      path: "{{gameDir}}/server_settings.ini"
 
 game:
-  path: "{game_dir}/game.exe"
-  arguments: "--user-name={user_name}"
-  firewall:
-    - "{game_dir}/game.exe"
-    - "{game_dir}/data/binaries/Win64/game-win64.exe"
+  windows:
+    command: "{{gameDir}}/game.exe"
+    workingDirectory: "{{gameDir}}"
+    arguments: "--user-name={{userName}}"
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/game.exe"
+        name: "allow_incoming_for_gamename"
 
 server:
-  path: "{game_dir}/game-server.exe"
-  arguments: "--server-config=config.xml --lan-server={user_name}_server --network-console"
-  firewall:
-    - "{game_dir}/game-server.exe"
+  windows:
+    command: "{{gameDir}}/server.exe"
+    workingDirectory: "{{gameDir}}"
+    arguments: "--dedicated --max-users=10"
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/game.exe"
+        name: "allow_incoming_for_gamename"
 ```
 
 ### Setup Section
@@ -104,27 +120,37 @@ Usage:
 
 ```yaml
 setup:
-  - type: file
-    path: "{user_dir}/Documents/Game/Game.ini"
-    content: |
-      [game]
-      key=value
+  windows:
+    - type: file
+      path: "{{userDir}}/Documents/Game/Game.ini"
+      content: |
+        [game]
+        key=value
 ```
 
 #### The `execute` type
 
 Runs an executable.
 
- Parameter  | Type           | Description
-------------|----------------|-----------------------------
- path       | string         | The path to the executable.
+ Parameter        | Type           | Description
+------------------|----------------|-----------------------------
+ command          | string         | The path to the executable.
+ arguments        | string         | The arguments in string format.
+ workingDirectory | string         | The working directory.
+ runAsAdmin       | boolean        | Runs the executable as admin.
+ allowedExitCodes | array[number]  | A list of allowed exit codes.
 
-Usage:
-
+**Usage:**
 ```yaml
 setup:
-  - type: execute
-    path: "{game_dir}/dependency.exe"
+  windows:
+    - type: execute
+      command: "{{gameDir}}/dependency.exe"
+      arguments: "-q"
+      workingDirectory: "{{gameDir}}"
+      runAsAdmin: true
+      allowedExitCodes:
+        - 0
 ```
 
 #### The `registry` type
@@ -134,55 +160,89 @@ Creates a registry key.
  Parameter  | Type           | Description
 ------------|----------------|-----------------------------
  path       | string         | The path to the executable.
- subtype    | string         | The registry key type. (DWORD, SZ, MULTI_SZ, BINARY)
+ keyType    | string         | The registry key type. (REG_DWORD, REG_SZ, REG_MULTI_SZ, REG_BINARY)
  key        | string         | The registry key name.
- content    | string, int    | The content of the registry key.
+ value      | string, int    | The content of the registry key.
 
 ```yaml
 setup:
-  - type: registry
-    subtype: DWORD
-    path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
-    key: "Installed"
-    content: 1
+  windows:
+    - type: registry
+      path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
+      key: "Installed"
+      keyType: 'DWORD'
+      value: 1
 ```
 
-### Game Section
+#### The `fileTemplate` type
 
-This section defines how a game can be started.
+Takes a template file, fills in the variables and saves it to a location.
 
- Parameter  | Type           | Description
-------------|----------------|-----------------------------
- path       | string         | The path to the executable.
- arguments  | string         | The arguments to use with the executable.
- firewall   | list[string]   | A list of executables to open the firewall for.
+ Parameter    | Type   | Description
+--------------|--------|--------------------------------
+ path         | string | The path to the target file.
+ templateFile | string | The path to the template file.
 
-### Server Section
+```yaml
+setup:
+  windows:
+    - type: fileTemplate
+      templateFile: "{{gameDir}}/server_settings.ini.template"
+      path: "{{gameDir}}/server_settings.ini"
+```
 
-This section defines how a server can be started.
+### Game and Server Section
 
- Parameter  | Type           | Description
-------------|----------------|-----------------------------
- path       | string         | The path to the executable.
- arguments  | string         | The arguments to use with the executable.
- firewall   | list[string]   | A list of executables to open the firewall for.
+This sections define how a game is started.
+
+ Parameter        | Type           | Description
+------------------|----------------|-----------------------------
+ command          | string               | The path to the executable.
+ arguments        | string               | The arguments in string format.
+ workingDirectory | string               | The working directory.
+ runAsAdmin       | boolean              | Runs the executable as admin.
+ firewallRules    | array[FirewallRules] | A list of firewall rules. (Windows only)
+
+```yaml
+game:
+  windows:
+    command: "{{gameDir}}/game.exe"
+    workingDirectory: "{{gameDir}}"
+    arguments: "--user-name={{userName}}"
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/game.exe"
+        name: "allow_incoming_for_gamename"
+
+server:
+  windows:
+    command: "{{gameDir}}/server.exe"
+    workingDirectory: "{{gameDir}}"
+    arguments: "--dedicated --max-users=10"
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/game.exe"
+        name: "allow_incoming_for_gamename"
+```
 
 ### Available Variables
 
 To ensure the best user experience script creators can and should use variables in their game scripts. Lanbuddy is exposing the following templateable variables by default:
 
- Variable Name   | Description                       | Example
------------------|-----------------------------------|-----------------------------
- `{user_name}`   | The users name.                   | `lanbuddy`
- `{game_dir}`    | The gamefiles directory.          | `D:\games\game\data\`
- `{user_dir}`    | The current user directory.       | `C:\Users\lanbuddy\`
- `{appdata_dir}` | The appdata directory.            | `C:\Users\lanbuddy\AppData\`
- `{lang}`        | The language.                     | `german`
- `{lang_cap}`    | The language but capitalized.     | `German`
- `{lang_iso_1}`  | The langauge in iso set 1 format. | `de`
- `{lang_iso_2}`  | The langauge in iso set 2 format. | `deu`
- `{lang_local}`  | The language in its language.     | `deutsch`
- `{locale}`      | The locale code.                  | `de_DE`
+ Variable Name     | Description                       | Example
+-------------------|-----------------------------------|-----------------------------
+ `{{userName}}`    | The users name.                   | `lanbuddy`
+ `{{gameDir}}`     | The gamefiles directory.          | `D:\lanbuddy\installed/game`
+ `{{userDir}}`     | The current user directory.       | `C:\Users\lanbuddy\`
+ `{{appdataDir}}`  | The appdata directory.            | `C:\Users\lanbuddy\AppData\`
+ `{{lang}}`        | The language.                     | `german`
+ `{{langCap}}`     | The language but capitalized.     | `German`
+ `{{langIso1}}`    | The langauge in iso set 1 format. | `de`
+ `{{langIso2}}`    | The langauge in iso set 2 format. | `deu`
+ `{{langLocal}}`   | The language in its language.     | `deutsch`
+ `{{locale}}`      | The locale code.                  | `de_DE`
 
 ## License
 

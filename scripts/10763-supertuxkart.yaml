@@ -2,42 +2,52 @@
 version: 1
 
 setup:
-  # Create player profile and set user name
-  - type: file
-    path: "{appdata_dir}/Roaming/supertuxkart/config-0.10/players.xml"
-    content: |
-      <?xml version="1.0"?>
-      <players version="1" >
-          <current player="{user_name}"/>
-          <player name="{user_name}" guest="false" use-frequency="1"
-                  icon-filename="1.png"
-                  unique-id="1" saved-session="false"
-                  saved-user="0" saved-token=""
-                  last-online-name="" last-was-online="false"
-                  remember-password="false"
-                  default-kart-color="0">
-          </player>
-      </players>
-  # Create game configuration and set language
-  - type: file
-    path: "{appdata_dir}/Roaming/supertuxkart/config-0.10/config.xml"
-    content: |
-      <?xml version="1.0"?>
-      <stkconfig version="8" >
-          <language value="{lang_iso_1}" />
-      </stkconfig>
+  windows:
+    # Create player profile and set user name
+    - type: file
+      path: "{{appdataDir}}/Roaming/supertuxkart/config-0.10/players.xml"
+      content: |
+        <?xml version="1.0"?>
+        <players version="1" >
+            <current player="{{userName}}"/>
+            <player name="{{userName}}" guest="false" use-frequency="1"
+                    icon-filename="1.png"
+                    unique-id="1" saved-session="false"
+                    saved-user="0" saved-token=""
+                    last-online-name="" last-was-online="false"
+                    remember-password="false"
+                    default-kart-color="0">
+            </player>
+        </players>
+    # Create game configuration and set language
+    - type: file
+      path: "{{appdataDir}}/Roaming/supertuxkart/config-0.10/config.xml"
+      content: |
+        <?xml version="1.0"?>
+        <stkconfig version="8" >
+            <language value="{{langIso1}}" />
+        </stkconfig>
 
 game:
-  path: "{game_dir}/supertuxkart.exe"
-  firewall:
-    - "{game_dir}/supertuxkart.exe"
+  windows:
+    command: "{{gameDir}}/supertuxkart.exe"
+    workingDirectory: "{{gameDir}}"
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/supertuxkart.exe"
+        name: "Allow SuperTuxKart Inbound"
 
 server:
-  path: "{game_dir}/supertuxkart.exe"
-  # Use default server config which comes with the game and start a lan server.
-  arguments: >
-    --server-config={appdata_dir}/Roaming/supertuxkart/config-0.10/server-config.xml"
-    --lan-server={user_name}_kart_server
-    --network-console
-  firewall:
-    - "{game_dir}/supertuxkart.exe"
+  windows:
+    command: "{{gameDir}}/supertuxkart.exe"
+    workingDirectory: "{{gameDir}}"
+    arguments: >
+      --server-config="{{appdataDir}}/Roaming/supertuxkart/config-0.10/server-config.xml"
+      --lan-server={{userName}}_kart_server
+      --network-console
+    firewallRules:
+      - action: "allow"
+        direction: "in"
+        executable: "{{gameDir}}/supertuxkart.exe"
+        name: "Allow SuperTuxKart Inbound"
