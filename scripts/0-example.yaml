@@ -20,8 +20,8 @@ setup:
     - type: registry
       path: "HKEY_CURRENT_USER\\SOFTWARE\\Game Company\\Game"
       key: "Installed"
-      keyType: 'DWORD'
-      value: 1
+      keyType: 'REG_DWORD'
+      value: "1"
     - type: fileTemplate
       templateFile: "{{gameDir}}/server_settings.ini.template"
       path: "{{gameDir}}/server_settings.ini"
